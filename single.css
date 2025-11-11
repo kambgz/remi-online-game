@@ -1,0 +1,1798 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Remi 13 Kartu - Single Player</title>
+    <style>
+        /* Copy semua CSS dari kode single player Anda di atas */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a472a 0%, #2a5298 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        .menu-screen, .game-screen {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .game-screen {
+            display: none;
+        }
+
+        h1 {
+            color: #1a472a;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        .menu-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: #1a472a;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #2a5298;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(42, 82, 152, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #5a6268;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .btn-warning:hover {
+            background: #e0a800;
+        }
+
+        .demo-badge {
+            background: #ffd700;
+            color: #1a472a;
+            padding: 10px 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+            font-weight: bold;
+            border: 2px solid #ff8c00;
+        }
+
+        .game-area {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .players-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .player-info {
+            text-align: center;
+            padding: 15px;
+            border-radius: 8px;
+            background: white;
+            border: 2px solid #ddd;
+            position: relative;
+        }
+
+        .player-info.active {
+            background: #1a472a;
+            color: white;
+            border-color: #2a5298;
+        }
+
+        .player-info.winner {
+            background: #28a745;
+            color: white;
+            border-color: #1e7e34;
+        }
+
+        .player-info.you {
+            border-color: #ffd700;
+            border-width: 3px;
+        }
+
+        .player-position {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: gold;
+            color: #1a472a;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.8em;
+        }
+
+        .bot-level {
+            font-size: 0.7em;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-top: 5px;
+            display: inline-block;
+        }
+
+        .level-easy {
+            background: #28a745;
+            color: white;
+        }
+
+        .level-medium {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .level-hard {
+            background: #dc3545;
+            color: white;
+        }
+
+        .table-area {
+            min-height: 200px;
+            background: #1a472a;
+            border-radius: 15px;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .table-cards {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .card {
+            width: 70px;
+            height: 100px;
+            background: white;
+            border: 2px solid #333;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            user-select: none;
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+        }
+
+        .card.selected {
+            transform: translateY(-20px);
+            box-shadow: 0 5px 15px rgba(26, 71, 42, 0.5);
+            border-color: #1a472a;
+            border-width: 3px;
+        }
+
+        .card.red {
+            color: #dc3545;
+        }
+
+        .card.black {
+            color: #000;
+        }
+
+        .card-suit {
+            font-size: 1.2em;
+        }
+
+        .player-hand {
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+        }
+
+        .hand-cards {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 15px;
+        }
+
+        .game-controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            padding: 20px;
+            flex-wrap: wrap;
+        }
+
+        .message {
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-weight: 600;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .message.warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .instant-win {
+            background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            margin: 20px 0;
+            border: 3px solid #ff8c00;
+            animation: pulse 1s ease infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        .instant-win h2 {
+            color: #dc3545;
+            font-size: 2em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .rules-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-size: 0.9em;
+        }
+
+        .rules-section h3 {
+            color: #1a472a;
+            margin-bottom: 10px;
+        }
+
+        .rules-section ul {
+            margin-left: 20px;
+        }
+
+        .rules-section li {
+            margin: 5px 0;
+        }
+
+        .ranking-section {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .ranking-section h3 {
+            color: #1a472a;
+            margin-bottom: 10px;
+        }
+
+        .ranking-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .scoreboard {
+            background: #1a472a;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .scoreboard h3 {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .score-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+        }
+
+        .difficulty-selector {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 15px 0;
+        }
+
+        .difficulty-btn {
+            padding: 10px 20px;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .difficulty-btn.active {
+            border-color: #1a472a;
+            transform: scale(1.05);
+        }
+
+        .combination-info {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 768px) {
+            .menu-screen, .game-screen {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .card {
+                width: 60px;
+                height: 85px;
+                font-size: 1.2em;
+            }
+
+            .game-controls {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+            }
+
+            .difficulty-selector {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Menu Screen -->
+        <div class="menu-screen" id="menuScreen">
+            <div class="demo-badge">
+                🎮 REMI 13 KARTU - Single Player
+            </div>
+            <h1>🃏 Remi 13 Kartu</h1>
+            
+            <div class="difficulty-selector">
+                <button class="difficulty-btn btn-success active" onclick="setBotDifficulty('easy')">Easy</button>
+                <button class="difficulty-btn btn-warning" onclick="setBotDifficulty('medium')">Medium</button>
+                <button class="difficulty-btn btn-danger" onclick="setBotDifficulty('hard')">Hard</button>
+            </div>
+            <p style="text-align: center; margin-bottom: 20px; font-weight: bold;" id="difficultyText">Level: Easy - BOT bermain sederhana</p>
+
+            <div class="menu-buttons">
+                <button class="btn-primary" onclick="startGame(4)">Main 4 Pemain (1 Manusia + 3 Bot)</button>
+                <button class="btn-primary" onclick="startGame(3)">Main 3 Pemain (1 Manusia + 2 Bot)</button>
+                <button class="btn-primary" onclick="startGame(2)">Main 2 Pemain (1 Manusia + 1 Bot)</button>
+                <button class="btn-secondary" onclick="goBackToMultiplayer()">Kembali ke Multiplayer</button>
+            </div>
+
+            <div class="rules-section">
+                <h3>📋 Aturan Pemain Pertama:</h3>
+                <ul>
+                    <li><strong>Prioritas Kartu Pertama:</strong> 3♣ > 3♠ > 3♦ > 3♥ > 4♣ > 4♠ > 4♦ > 4♥ > 5♣ > dst</li>
+                    <li><strong>Urutan Kartu:</strong> 3 < 4 < 5 < 6 < 7 < 8 < 9 < 10 < J < Q < K < A < 2</li>
+                    <li><strong>Straight:</strong> Minimal 3 kartu, 2 hanya boleh di awal (2-3-4)</li>
+                    <li><strong>Four of a Kind:</strong> Hanya di giliran baru atau lawan kartu 2</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Game Screen -->
+        <div class="game-screen" id="gameScreen">
+            <div class="demo-badge">
+                🎮 Level BOT: <span id="currentDifficulty">Easy</span> - Ronde <span id="roundNumber">1</span>
+            </div>
+            <h1>🃏 Remi 13 Kartu</h1>
+
+            <div id="instantWinMessage"></div>
+            <div id="gameMessage"></div>
+
+            <div class="game-area">
+                <div class="scoreboard" id="scoreboard">
+                    <h3>🏆 Scoreboard</h3>
+                    <div id="scoreList"></div>
+                </div>
+
+                <div class="players-info" id="playersInfo"></div>
+
+                <div class="table-area">
+                    <h3 style="color: white;">Kartu di Meja</h3>
+                    <div class="table-cards" id="tableCards"></div>
+                    <p style="color: white;" id="tableInfo">Belum ada kartu</p>
+                </div>
+
+                <div class="player-hand">
+                    <h3>Kartu Anda (<span id="cardCount">13</span> kartu tersisa)</h3>
+                    <div class="combination-info">
+                        <strong>Kombinasi Valid:</strong> Single, Straight (min 3 kartu), Triple, Four of a Kind
+                    </div>
+                    <div class="hand-cards" id="playerCards"></div>
+                </div>
+
+                <div class="game-controls">
+                    <button class="btn-primary" id="playBtn" onclick="playCards()">Mainkan Kartu</button>
+                    <button class="btn-secondary" id="passBtn" onclick="pass()">Lewat</button>
+                    <button class="btn-danger" onclick="resetGame()">Kembali ke Menu</button>
+                    <button class="btn-success" id="nextRoundBtn" onclick="startNewRound()" style="display: none;">Ronde Baru</button>
+                </div>
+
+                <div class="ranking-section" id="rankingSection" style="display: none;">
+                    <h3>🏆 Ranking Ronde Ini</h3>
+                    <div id="rankingList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game State
+        let gameState = {
+            players: [],
+            currentTurnIndex: 0,
+            tableCards: null,
+            playerHands: {},
+            consecutivePasses: 0,
+            gameOver: false,
+            winners: [],
+            roundNumber: 1,
+            totalPoints: {},
+            firstRound: true,
+            botDifficulty: 'easy',
+            gameHistory: [],
+            previousRoundWinner: null
+        };
+
+        let selectedCards = [];
+        const myPlayerId = 0; // Player always ID 0
+
+        // Card definitions
+        const suits = ['♠', '♣', '♦', '♥'];
+        const ranks = ['3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A', '2'];
+        const rankValues = { '3': 0, '4': 1, '5': 2, '6': 3, '7': 4, '8': 5, '9': 6, '10': 7, 'J': 8, 'Q': 9, 'K': 10, 'A': 11, '2': 12 };
+
+        // Set bot difficulty
+        function setBotDifficulty(difficulty) {
+            gameState.botDifficulty = difficulty;
+            document.getElementById('difficultyText').textContent = 
+                difficulty === 'easy' ? 'Level: Easy - BOT bermain sederhana' :
+                difficulty === 'medium' ? 'Level: Medium - BOT bermain strategis' :
+                'Level: Hard - BOT sangat cerdas';
+            
+            document.getElementById('currentDifficulty').textContent = 
+                difficulty.charAt(0).toUpperCase() + difficulty.slice(1);
+            
+            // Update active button
+            document.querySelectorAll('.difficulty-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+
+        // Create full deck
+        function createDeck() {
+            const deck = [];
+            for (let suit of suits) {
+                for (let rank of ranks) {
+                    deck.push({ rank, suit });
+                }
+            }
+            return deck;
+        }
+
+        // Shuffle deck
+        function shuffle(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        // Compare cards - hanya berdasarkan rank
+        function compareCards(card1, card2) {
+            return rankValues[card1.rank] - rankValues[card2.rank];
+        }
+
+        // Check four of a kind
+        function hasFourOfAKind(cards) {
+            const rankCounts = {};
+            cards.forEach(c => {
+                rankCounts[c.rank] = (rankCounts[c.rank] || 0) + 1;
+            });
+            
+            for (let rank in rankCounts) {
+                if (rankCounts[rank] === 4) {
+                    return { has: true, rank: rank };
+                }
+            }
+            return { has: false };
+        }
+
+        // Check if cards form a valid triple
+        function isValidTriple(cards) {
+            if (cards.length !== 3) return false;
+            return cards[0].rank === cards[1].rank && cards[1].rank === cards[2].rank;
+        }
+
+        // Check if cards form a valid straight (boleh mengandung 2 hanya di awal)
+        function isValidStraight(cards) {
+            if (cards.length < 3) return false;
+            
+            const sortedCards = [...cards].sort(compareCards);
+            
+            // Cek jika ada kartu 2 di posisi selain awal
+            for (let i = 1; i < sortedCards.length; i++) {
+                if (sortedCards[i].rank === '2') {
+                    return false;
+                }
+            }
+            
+            // Cek urutan berkelanjutan
+            for (let i = 1; i < sortedCards.length; i++) {
+                if (rankValues[sortedCards[i].rank] !== rankValues[sortedCards[i-1].rank] + 1) {
+                    return false;
+                }
+            }
+            
+            return true;
+        }
+
+        // ATURAN BARU: Cari kartu dengan prioritas tertinggi untuk giliran pertama
+        function containsRequiredFirstCard(cards) {
+            const suitPriority = ['♣', '♠', '♦', '♥']; // Prioritas: kriting, sekop, wajik, love
+            
+            // Cari kartu 3 dengan prioritas suit
+            for (let suit of suitPriority) {
+                if (cards.some(card => card.rank === '3' && card.suit === suit)) {
+                    return true;
+                }
+            }
+            
+            // Jika tidak ada 3, cari 4 dengan prioritas suit
+            for (let suit of suitPriority) {
+                if (cards.some(card => card.rank === '4' && card.suit === suit)) {
+                    return true;
+                }
+            }
+            
+            // Jika tidak ada 4, cari 5, dst...
+            for (let rank of ['5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A', '2']) {
+                for (let suit of suitPriority) {
+                    if (cards.some(card => card.rank === rank && card.suit === suit)) {
+                        return true;
+                    }
+                }
+            }
+            
+            return false;
+        }
+
+        // ATURAN BARU: Temukan pemain pertama berdasarkan prioritas kartu
+        function findFirstPlayer() {
+            const suitPriority = ['♣', '♠', '♦', '♥'];
+            
+            // Cari pemain yang punya kartu 3 dengan prioritas suit
+            for (let suit of suitPriority) {
+                for (let i = 0; i < gameState.players.length; i++) {
+                    const hand = gameState.playerHands[i];
+                    if (hand.some(card => card.rank === '3' && card.suit === suit)) {
+                        return i;
+                    }
+                }
+            }
+            
+            // Jika tidak ada yang punya 3, cari yang punya 4 dengan prioritas suit
+            for (let suit of suitPriority) {
+                for (let i = 0; i < gameState.players.length; i++) {
+                    const hand = gameState.playerHands[i];
+                    if (hand.some(card => card.rank === '4' && card.suit === suit)) {
+                        return i;
+                    }
+                }
+            }
+            
+            // Jika tidak ada yang punya 4, cari yang punya 5, dst...
+            for (let rank of ['5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A', '2']) {
+                for (let suit of suitPriority) {
+                    for (let i = 0; i < gameState.players.length; i++) {
+                        const hand = gameState.playerHands[i];
+                        if (hand.some(card => card.rank === rank && card.suit === suit)) {
+                            return i;
+                        }
+                    }
+                }
+            }
+            
+            // Fallback: mulai dari pemain 0
+            return 0;
+        }
+
+        // Check if player can play four of a kind
+        function canPlayFourOfAKind(playerId) {
+            const hand = gameState.playerHands[playerId];
+            const fourOfAKind = hasFourOfAKind(hand);
+            
+            if (!fourOfAKind.has) return false;
+            
+            // Bisa dimainkan jika: giliran baru (semua pass) atau melawan kartu 2
+            if (!gameState.tableCards) return true;
+            if (gameState.tableCards.type === 'single' && gameState.tableCards.cards[0].rank === '2') return true;
+            if (gameState.consecutivePasses >= gameState.players.filter(p => p.status === 'playing').length - 1) return true;
+            
+            return false;
+        }
+
+        // Find valid straights in hand
+        function findValidStraights(hand, minLength = 3) {
+            const straights = [];
+            const sortedHand = [...hand].sort(compareCards);
+            
+            for (let i = 0; i <= sortedHand.length - minLength; i++) {
+                let currentStraight = [sortedHand[i]];
+                let currentRank = rankValues[sortedHand[i].rank];
+                
+                for (let j = i + 1; j < sortedHand.length; j++) {
+                    if (rankValues[sortedHand[j].rank] === currentRank + 1) {
+                        currentStraight.push(sortedHand[j]);
+                        currentRank++;
+                        if (currentStraight.length >= minLength) {
+                            // Cek validitas straight (2 hanya di awal)
+                            let valid = true;
+                            for (let k = 1; k < currentStraight.length; k++) {
+                                if (currentStraight[k].rank === '2') {
+                                    valid = false;
+                                    break;
+                                }
+                            }
+                            if (valid) {
+                                straights.push([...currentStraight]);
+                            }
+                        }
+                    } else if (rankValues[sortedHand[j].rank] > currentRank + 1) {
+                        break;
+                    }
+                }
+            }
+            return straights;
+        }
+
+        // Find valid triples in hand
+        function findValidTriples(hand) {
+            const triples = [];
+            const rankCounts = {};
+            
+            hand.forEach(card => {
+                rankCounts[card.rank] = (rankCounts[card.rank] || 0) + 1;
+            });
+            
+            for (let rank in rankCounts) {
+                if (rankCounts[rank] >= 3) {
+                    const cardsOfRank = hand.filter(card => card.rank === rank);
+                    // Add triple (3 cards)
+                    triples.push(cardsOfRank.slice(0, 3));
+                }
+            }
+            return triples;
+        }
+
+        // Validate play according to final rules
+        function validatePlay(cards, tableCards, isFirstTurn = false) {
+            if (cards.length === 0) return { valid: false, error: 'Pilih kartu terlebih dahulu' };
+
+            // Check four of a kind
+            const fourOfAKind = hasFourOfAKind(cards);
+            if (fourOfAKind.has) {
+                if (!canPlayFourOfAKind(gameState.currentTurnIndex)) {
+                    return { valid: false, error: 'Four of a kind hanya bisa dimainkan di giliran baru atau lawan kartu 2' };
+                }
+                return { valid: true, type: 'four-of-a-kind' };
+            }
+
+            // ATURAN BARU: Ronde pertama - wajib mengandung kartu dengan prioritas tertinggi
+            if (isFirstTurn && gameState.firstRound) {
+                if (!containsRequiredFirstCard(cards)) {
+                    return { valid: false, error: 'Ronde pertama! Kombinasi pertama harus mengandung kartu dengan prioritas tertinggi (3♣, 3♠, 3♦, 3♥, 4♣, dst)' };
+                }
+            }
+
+            const sortedCards = [...cards].sort(compareCards);
+
+            if (!tableCards) {
+                // Pemain pertama bebas memulai dengan kombinasi yang valid
+                if (cards.length === 1) return { valid: true, type: 'single' };
+                
+                // Triple
+                if (isValidTriple(cards)) {
+                    return { valid: true, type: 'triple' };
+                }
+                
+                // Straight (minimal 3 kartu)
+                if (isValidStraight(cards)) {
+                    return { valid: true, type: 'straight' };
+                }
+                
+                return { valid: false, error: 'Kombinasi tidak valid. Hanya single, triple, atau straight yang diperbolehkan' };
+            }
+
+            const tableType = tableCards.type;
+            
+            // Four of a kind bisa lawan kartu 2
+            if (tableType === 'single' && tableCards.cards[0].rank === '2' && fourOfAKind.has) {
+                return { valid: true, type: 'four-of-a-kind' };
+            }
+            
+            // Harus sama tipe dan jumlah kartu (kecuali four of a kind)
+            if (cards.length === 1 && tableType === 'single') {
+                if (compareCards(cards[0], tableCards.cards[0]) > 0) {
+                    return { valid: true, type: 'single' };
+                }
+                return { valid: false, error: 'Kartu harus lebih besar' };
+            }
+
+            if (tableType === 'triple' && cards.length === 3) {
+                if (isValidTriple(cards)) {
+                    const cardRank = cards[0].rank;
+                    const tableRank = tableCards.cards[0].rank;
+                    if (rankValues[cardRank] > rankValues[tableRank]) {
+                        return { valid: true, type: 'triple' };
+                    }
+                    return { valid: false, error: 'Triple harus lebih besar' };
+                }
+                return { valid: false, error: 'Harus triple 3 kartu' };
+            }
+
+            if (tableType === 'straight' && cards.length >= 3) {
+                if (cards.length !== tableCards.cards.length) {
+                    return { valid: false, error: 'Straight harus sama panjang' };
+                }
+                
+                if (!isValidStraight(cards)) {
+                    return { valid: false, error: 'Bukan straight yang valid' };
+                }
+                
+                if (rankValues[sortedCards[sortedCards.length-1].rank] > 
+                    rankValues[tableCards.cards[tableCards.cards.length-1].rank]) {
+                    return { valid: true, type: 'straight' };
+                }
+                return { valid: false, error: 'Straight harus lebih tinggi' };
+            }
+
+            return { valid: false, error: 'Harus mengikuti tipe kartu di meja' };
+        }
+
+        // Show game message
+        function showGameMessage(message, type) {
+            const messageEl = document.getElementById('gameMessage');
+            messageEl.innerHTML = `<div class="message ${type}">${message}</div>`;
+            setTimeout(() => {
+                messageEl.innerHTML = '';
+            }, 3000);
+        }
+
+        // Start game
+        window.startGame = function(numPlayers) {
+            const deck = shuffle(createDeck());
+            const cardsPerPlayer = 13;
+
+            gameState.players = [];
+            gameState.playerHands = {};
+            gameState.winners = [];
+            gameState.firstRound = true;
+            gameState.roundNumber = 1;
+            gameState.gameHistory = [];
+
+            // Initialize total points
+            gameState.totalPoints = {};
+            for (let i = 0; i < numPlayers; i++) {
+                gameState.totalPoints[i] = 0;
+            }
+
+            for (let i = 0; i < numPlayers; i++) {
+                const hand = deck.slice(i * cardsPerPlayer, (i + 1) * cardsPerPlayer);
+                gameState.players.push({
+                    id: i,
+                    name: i === 0 ? 'Anda' : `Bot ${i}`,
+                    cardCount: 13,
+                    status: 'playing',
+                    isBot: i !== 0,
+                    position: null,
+                    points: 0,
+                    history: []
+                });
+                gameState.playerHands[i] = hand;
+            }
+
+            // Tentukan pemain pertama dengan ATURAN BARU
+            let firstPlayer;
+            if (gameState.previousRoundWinner !== null) {
+                firstPlayer = gameState.previousRoundWinner;
+            } else {
+                firstPlayer = findFirstPlayer();
+            }
+
+            gameState.currentTurnIndex = firstPlayer;
+            gameState.tableCards = null;
+            gameState.consecutivePasses = 0;
+            gameState.gameOver = false;
+
+            document.getElementById('menuScreen').style.display = 'none';
+            document.getElementById('gameScreen').style.display = 'block';
+            document.getElementById('nextRoundBtn').style.display = 'none';
+            document.getElementById('roundNumber').textContent = gameState.roundNumber;
+
+            renderGame();
+
+            // Tampilkan info pemain pertama
+            if (firstPlayer !== 0) {
+                const reason = gameState.previousRoundWinner !== null ? 
+                    `sebagai juara 1 ronde sebelumnya` : 
+                    `karena punya kartu dengan prioritas tertinggi`;
+                showGameMessage(`${gameState.players[firstPlayer].name} mulai pertama ${reason}`, 'info');
+            }
+
+            if (!gameState.gameOver && gameState.players[firstPlayer].isBot) {
+                setTimeout(() => botTurn(gameState.botDifficulty), 1500);
+            }
+        };
+
+        // Render game
+        function renderGame() {
+            renderScoreboard();
+            renderPlayers();
+            renderTable();
+            renderPlayerCards();
+            updateControls();
+            renderRanking();
+        }
+
+        // Render scoreboard
+        function renderScoreboard() {
+            const scoreList = document.getElementById('scoreList');
+            scoreList.innerHTML = '';
+            
+            gameState.players.forEach(player => {
+                const scoreItem = document.createElement('div');
+                scoreItem.className = 'score-item';
+                scoreItem.innerHTML = `
+                    <span>${player.name}</span>
+                    <span>${gameState.totalPoints[player.id] || 0} poin</span>
+                `;
+                scoreList.appendChild(scoreItem);
+            });
+            
+            const roundInfo = document.createElement('div');
+            roundInfo.className = 'score-item';
+            roundInfo.style.borderTop = '1px solid white';
+            roundInfo.style.marginTop = '5px';
+            roundInfo.style.paddingTop = '5px';
+            roundInfo.innerHTML = `<span>Ronde ${gameState.roundNumber}</span>`;
+            scoreList.appendChild(roundInfo);
+        }
+
+        // Render players
+        function renderPlayers() {
+            const container = document.getElementById('playersInfo');
+            container.innerHTML = '';
+
+            gameState.players.forEach((player, idx) => {
+                const div = document.createElement('div');
+                div.className = 'player-info';
+                
+                if (idx === gameState.currentTurnIndex && !gameState.gameOver && player.status === 'playing') {
+                    div.classList.add('active');
+                }
+                if (player.status === 'winner') {
+                    div.classList.add('winner');
+                }
+                if (idx === myPlayerId) {
+                    div.classList.add('you');
+                }
+
+                let positionBadge = '';
+                if (player.position !== null) {
+                    positionBadge = `<div class="player-position">${player.position}</div>`;
+                }
+
+                let levelBadge = '';
+                if (player.isBot) {
+                    const levelClass = `level-${gameState.botDifficulty}`;
+                    levelBadge = `<div class="bot-level ${levelClass}">${gameState.botDifficulty.toUpperCase()}</div>`;
+                }
+
+                div.innerHTML = `
+                    ${positionBadge}
+                    <div><strong>${player.name}</strong></div>
+                    <div>${player.cardCount} kartu</div>
+                    ${player.status === 'winner' ? `<div>🏆 Juara ${player.position}</div>` : ''}
+                    ${idx === myPlayerId ? '<div style="font-size: 0.8em; margin-top: 5px;">(Anda)</div>' : ''}
+                    ${canPlayFourOfAKind(idx) ? '<div style="color: #dc3545; font-size: 0.8em;">✨ 4 of a Kind!</div>' : ''}
+                    ${levelBadge}
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // Render table
+        function renderTable() {
+            const container = document.getElementById('tableCards');
+            const info = document.getElementById('tableInfo');
+
+            if (gameState.tableCards) {
+                container.innerHTML = '';
+                gameState.tableCards.cards.forEach(card => {
+                    const cardEl = createCardElement(card, false);
+                    container.appendChild(cardEl);
+                });
+                info.textContent = `${gameState.tableCards.type.toUpperCase()} oleh ${gameState.players[gameState.tableCards.playedBy].name}`;
+            } else {
+                container.innerHTML = '';
+                if (gameState.firstRound && gameState.currentTurnIndex === findFirstPlayer()) {
+                    info.textContent = 'Ronde pertama! Wajib mengeluarkan kombinasi yang mengandung kartu dengan prioritas tertinggi';
+                } else {
+                    info.textContent = 'Belum ada kartu - Pemain pertama bebas main kombinasi apapun';
+                }
+            }
+        }
+
+        // Create card element
+        function createCardElement(card, selectable) {
+            const cardEl = document.createElement('div');
+            cardEl.className = 'card ' + (['♥', '♦'].includes(card.suit) ? 'red' : 'black');
+            cardEl.innerHTML = `<div>${card.rank}</div><div class="card-suit">${card.suit}</div>`;
+            if (!selectable) {
+                cardEl.style.cursor = 'default';
+            }
+            return cardEl;
+        }
+
+        // Render player cards
+        function renderPlayerCards() {
+            const container = document.getElementById('playerCards');
+            container.innerHTML = '';
+
+            const myHand = gameState.playerHands[myPlayerId].sort(compareCards);
+            
+            myHand.forEach((card, index) => {
+                const cardEl = createCardElement(card, true);
+                cardEl.onclick = () => toggleCard(index);
+                if (selectedCards.includes(index)) {
+                    cardEl.classList.add('selected');
+                }
+                container.appendChild(cardEl);
+            });
+
+            document.getElementById('cardCount').textContent = myHand.length;
+        }
+
+        // Toggle card selection
+        function toggleCard(index) {
+            if (gameState.gameOver || gameState.currentTurnIndex !== myPlayerId) return;
+
+            const idx = selectedCards.indexOf(index);
+            if (idx > -1) {
+                selectedCards.splice(idx, 1);
+            } else {
+                selectedCards.push(index);
+            }
+            renderPlayerCards();
+        }
+
+        // Update controls
+        function updateControls() {
+            const playBtn = document.getElementById('playBtn');
+            const passBtn = document.getElementById('passBtn');
+            const nextRoundBtn = document.getElementById('nextRoundBtn');
+
+            const isMyTurn = gameState.currentTurnIndex === myPlayerId && !gameState.gameOver && gameState.players[myPlayerId].status === 'playing';
+            playBtn.disabled = !isMyTurn;
+            passBtn.disabled = !isMyTurn;
+
+            if (gameState.gameOver) {
+                nextRoundBtn.style.display = 'block';
+            }
+        }
+
+        // Declare winner
+        function declareWinner(playerId) {
+            const player = gameState.players[playerId];
+            player.status = 'winner';
+            
+            // Tentukan posisi berdasarkan jumlah pemenang sebelumnya
+            const position = gameState.winners.length + 1;
+            player.position = position;
+            
+            // Beri poin sesuai posisi
+            let points = 0;
+            if (position === 1) {
+                points = 3;
+                gameState.previousRoundWinner = playerId;
+            }
+            else if (position === 2) points = 2;
+            else if (position === 3) points = 1;
+            
+            player.points = points;
+            gameState.totalPoints[playerId] += points;
+            
+            gameState.winners.push(playerId);
+            
+            showGameMessage(`🎉 ${player.name} menjadi Juara ${position}! (+${points} poin) 🎉`, 'success');
+            
+            // Reset table untuk giliran berikutnya
+            gameState.tableCards = null;
+            gameState.consecutivePasses = 0;
+            
+            // Cek apakah game sudah berakhir (hanya tersisa 1 pemain)
+            const remainingPlayers = gameState.players.filter(p => p.status === 'playing').length;
+            if (remainingPlayers <= 1) {
+                gameState.gameOver = true;
+                if (remainingPlayers === 1) {
+                    const lastPlayerId = gameState.players.findIndex(p => p.status === 'playing');
+                    declareWinner(lastPlayerId);
+                }
+                showGameMessage('🎊 RONDE SELESAI! 🎊', 'success');
+            }
+        }
+
+        // Play cards
+        window.playCards = function() {
+            if (gameState.currentTurnIndex !== myPlayerId || gameState.gameOver || gameState.players[myPlayerId].status !== 'playing') return;
+            if (selectedCards.length === 0) {
+                showGameMessage('Pilih kartu terlebih dahulu!', 'error');
+                return;
+            }
+
+            const myHand = gameState.playerHands[myPlayerId];
+            const cardsToPlay = selectedCards.map(i => myHand[i]);
+            
+            // Cek apakah ini giliran pertama
+            const isFirstTurn = !gameState.tableCards && gameState.consecutivePasses === 0;
+            const validation = validatePlay(cardsToPlay, gameState.tableCards, isFirstTurn);
+
+            if (!validation.valid) {
+                showGameMessage(validation.error, 'error');
+                return;
+            }
+
+            // Remove played cards
+            gameState.playerHands[myPlayerId] = myHand.filter((_, i) => !selectedCards.includes(i));
+            selectedCards = [];
+
+            // Update table
+            gameState.tableCards = {
+                cards: cardsToPlay.sort(compareCards),
+                type: validation.type,
+                playedBy: myPlayerId
+            };
+            gameState.consecutivePasses = 0;
+
+            // Update player card count
+            gameState.players[myPlayerId].cardCount = gameState.playerHands[myPlayerId].length;
+
+            // Cek kemenangan seketika saat kartu habis atau four of a kind
+            if (validation.type === 'four-of-a-kind' || gameState.players[myPlayerId].cardCount === 0) {
+                if (validation.type === 'four-of-a-kind') {
+                    showGameMessage(`🎊 FOUR OF A KIND! ${gameState.players[myPlayerId].name} MENANG! 🎊`, 'success');
+                }
+                declareWinner(myPlayerId);
+                if (!gameState.gameOver) {
+                    nextTurn();
+                }
+            } else {
+                showGameMessage(`Anda main ${validation.type}: ${cardsToPlay.map(c => c.rank + c.suit).join(' ')}`, 'success');
+                nextTurn();
+            }
+        };
+
+        // Pass turn
+        window.pass = function() {
+            if (gameState.currentTurnIndex !== myPlayerId || gameState.gameOver || gameState.players[myPlayerId].status !== 'playing') return;
+
+            gameState.consecutivePasses++;
+            showGameMessage('Anda lewat', 'info');
+
+            // Check if all passed
+            const activePlayers = gameState.players.filter(p => p.status === 'playing').length;
+            if (gameState.consecutivePasses >= activePlayers - 1 && gameState.tableCards) {
+                gameState.tableCards = null;
+                gameState.consecutivePasses = 0;
+                showGameMessage('Semua lewat! Meja dibersihkan.', 'warning');
+            }
+
+            nextTurn();
+        };
+
+        // Next turn
+        function nextTurn() {
+            if (gameState.gameOver) {
+                renderGame();
+                return;
+            }
+
+            let nextPlayerIndex = gameState.currentTurnIndex;
+            let attempts = 0;
+            
+            do {
+                nextPlayerIndex = (nextPlayerIndex + 1) % gameState.players.length;
+                attempts++;
+                if (attempts > gameState.players.length) {
+                    // Fallback jika tidak ada pemain aktif
+                    break;
+                }
+            } while (gameState.players[nextPlayerIndex].status !== 'playing');
+
+            gameState.currentTurnIndex = nextPlayerIndex;
+            
+            // Set firstRound to false setelah giliran pertama selesai
+            if (gameState.firstRound) {
+                gameState.firstRound = false;
+            }
+            
+            renderGame();
+
+            if (gameState.players[nextPlayerIndex].isBot && gameState.players[nextPlayerIndex].status === 'playing') {
+                setTimeout(() => botTurn(gameState.botDifficulty), 1500);
+            }
+        }
+
+        // Bot AI - Easy (sederhana)
+        function botEasy(botId, botHand) {
+            // Main kartu acak yang valid
+            const validMoves = [];
+            
+            // Cek four of a kind
+            if (canPlayFourOfAKind(botId)) {
+                const fourOfAKind = hasFourOfAKind(botHand);
+                const cardsToPlay = botHand.filter(card => card.rank === fourOfAKind.rank);
+                return { played: true, cards: cardsToPlay, type: 'four-of-a-kind' };
+            }
+
+            const isFirstTurn = !gameState.tableCards && gameState.consecutivePasses === 0;
+
+            if (!gameState.tableCards) {
+                // Giliran baru
+                if (isFirstTurn && gameState.firstRound) {
+                    // ATURAN BARU: Wajib mengeluarkan kartu dengan prioritas tertinggi di ronde pertama
+                    const suitPriority = ['♣', '♠', '♦', '♥'];
+                    let requiredCard = null;
+                    
+                    // Cari kartu dengan prioritas tertinggi
+                    for (let suit of suitPriority) {
+                        requiredCard = botHand.find(card => card.rank === '3' && card.suit === suit);
+                        if (requiredCard) break;
+                    }
+                    if (!requiredCard) {
+                        for (let suit of suitPriority) {
+                            requiredCard = botHand.find(card => card.rank === '4' && card.suit === suit);
+                            if (requiredCard) break;
+                        }
+                    }
+                    // ... dan seterusnya untuk rank lainnya
+                    
+                    if (requiredCard) {
+                        // Coba cari kombinasi yang mengandung kartu required
+                        const straights = findValidStraights(botHand);
+                        const straightWithRequired = straights.find(straight => 
+                            straight.some(card => card.rank === requiredCard.rank && card.suit === requiredCard.suit)
+                        );
+                        if (straightWithRequired) {
+                            return { played: true, cards: straightWithRequired, type: 'straight' };
+                        }
+                        
+                        const triples = findValidTriples(botHand);
+                        const tripleWithRequired = triples.find(triple => 
+                            triple.some(card => card.rank === requiredCard.rank && card.suit === requiredCard.suit)
+                        );
+                        if (tripleWithRequired) {
+                            return { played: true, cards: tripleWithRequired, type: 'triple' };
+                        }
+                        
+                        return { played: true, cards: [requiredCard], type: 'single' };
+                    }
+                }
+                
+                // Main single terendah
+                return { played: true, cards: [botHand[0]], type: 'single' };
+            } else {
+                // Coba lawan dengan kartu acak yang valid
+                const tableType = gameState.tableCards.type;
+                
+                if (tableType === 'single') {
+                    const validCard = botHand.find(c => compareCards(c, gameState.tableCards.cards[0]) > 0);
+                    if (validCard) {
+                        return { played: true, cards: [validCard], type: 'single' };
+                    }
+                } else if (tableType === 'triple') {
+                    const tableRank = gameState.tableCards.cards[0].rank;
+                    const rankCounts = {};
+                    botHand.forEach(c => rankCounts[c.rank] = (rankCounts[c.rank] || 0) + 1);
+                    
+                    for (let rank in rankCounts) {
+                        if (rankCounts[rank] >= 3 && rankValues[rank] > rankValues[tableRank]) {
+                            const cardsToPlay = botHand.filter(c => c.rank === rank).slice(0, 3);
+                            return { played: true, cards: cardsToPlay, type: 'triple' };
+                        }
+                    }
+                } else if (tableType === 'straight') {
+                    const tableStraight = gameState.tableCards.cards;
+                    const straights = findValidStraights(botHand, tableStraight.length);
+                    const validStraight = straights.find(straight => 
+                        straight.length === tableStraight.length && 
+                        rankValues[straight[straight.length-1].rank] > rankValues[tableStraight[tableStraight.length-1].rank]
+                    );
+                    if (validStraight) {
+                        return { played: true, cards: validStraight, type: 'straight' };
+                    }
+                }
+            }
+
+            return { played: false };
+        }
+
+        // Bot AI - Medium (strategis)
+        function botMedium(botId, botHand) {
+            // Prioritaskan kombinasi yang menghabiskan kartu lebih banyak
+            const validMoves = [];
+            
+            // Cek four of a kind
+            if (canPlayFourOfAKind(botId)) {
+                const fourOfAKind = hasFourOfAKind(botHand);
+                const cardsToPlay = botHand.filter(card => card.rank === fourOfAKind.rank);
+                return { played: true, cards: cardsToPlay, type: 'four-of-a-kind' };
+            }
+
+            const isFirstTurn = !gameState.tableCards && gameState.consecutivePasses === 0;
+
+            if (!gameState.tableCards) {
+                // Giliran baru - prioritaskan kombinasi
+                if (isFirstTurn && gameState.firstRound) {
+                    // ATURAN BARU: Wajib mengeluarkan kartu dengan prioritas tertinggi
+                    const suitPriority = ['♣', '♠', '♦', '♥'];
+                    let requiredCard = null;
+                    
+                    for (let suit of suitPriority) {
+                        requiredCard = botHand.find(card => card.rank === '3' && card.suit === suit);
+                        if (requiredCard) break;
+                    }
+                    if (!requiredCard) {
+                        for (let suit of suitPriority) {
+                            requiredCard = botHand.find(card => card.rank === '4' && card.suit === suit);
+                            if (requiredCard) break;
+                        }
+                    }
+                    
+                    if (requiredCard) {
+                        // Cari kombinasi terbaik yang mengandung kartu required
+                        const straights = findValidStraights(botHand);
+                        const straightWithRequired = straights.find(straight => 
+                            straight.some(card => card.rank === requiredCard.rank && card.suit === requiredCard.suit) &&
+                            straight.length >= 4
+                        );
+                        if (straightWithRequired) {
+                            return { played: true, cards: straightWithRequired, type: 'straight' };
+                        }
+                        
+                        const triples = findValidTriples(botHand);
+                        const tripleWithRequired = triples.find(triple => 
+                            triple.some(card => card.rank === requiredCard.rank && card.suit === requiredCard.suit)
+                        );
+                        if (tripleWithRequired) {
+                            return { played: true, cards: tripleWithRequired, type: 'triple' };
+                        }
+                        
+                        return { played: true, cards: [requiredCard], type: 'single' };
+                    }
+                }
+
+                // Prioritaskan straight panjang
+                const straights = findValidStraights(botHand);
+                if (straights.length > 0) {
+                    // Pilih straight terpanjang
+                    const longestStraight = straights.reduce((longest, current) => 
+                        current.length > longest.length ? current : longest
+                    );
+                    if (longestStraight.length >= 4) {
+                        return { played: true, cards: longestStraight, type: 'straight' };
+                    }
+                }
+
+                // Prioritaskan triple
+                const triples = findValidTriples(botHand);
+                if (triples.length > 0) {
+                    return { played: true, cards: triples[0], type: 'triple' };
+                }
+
+                // Main single terendah
+                return { played: true, cards: [botHand[0]], type: 'single' };
+            } else {
+                // Lawan dengan strategi
+                const tableType = gameState.tableCards.type;
+                
+                if (tableType === 'single') {
+                    const validCards = botHand.filter(c => compareCards(c, gameState.tableCards.cards[0]) > 0);
+                    if (validCards.length > 0) {
+                        // Pilih kartu terendah yang bisa mengalahkan
+                        return { played: true, cards: [validCards[0]], type: 'single' };
+                    }
+                } else if (tableType === 'triple') {
+                    const tableRank = gameState.tableCards.cards[0].rank;
+                    const rankCounts = {};
+                    botHand.forEach(c => rankCounts[c.rank] = (rankCounts[c.rank] || 0) + 1);
+                    
+                    // Cari triple dengan rank terendah yang masih bisa mengalahkan
+                    let bestTriple = null;
+                    for (let rank in rankCounts) {
+                        if (rankCounts[rank] >= 3 && rankValues[rank] > rankValues[tableRank]) {
+                            if (!bestTriple || rankValues[rank] < rankValues[bestTriple]) {
+                                bestTriple = rank;
+                            }
+                        }
+                    }
+                    if (bestTriple) {
+                        const cardsToPlay = botHand.filter(c => c.rank === bestTriple).slice(0, 3);
+                        return { played: true, cards: cardsToPlay, type: 'triple' };
+                    }
+                } else if (tableType === 'straight') {
+                    const tableStraight = gameState.tableCards.cards;
+                    const straights = findValidStraights(botHand, tableStraight.length);
+                    const validStraight = straights.find(straight => 
+                        straight.length === tableStraight.length && 
+                        rankValues[straight[straight.length-1].rank] > rankValues[tableStraight[tableStraight.length-1].rank]
+                    );
+                    if (validStraight) {
+                        return { played: true, cards: validStraight, type: 'straight' };
+                    }
+                }
+            }
+
+            return { played: false };
+        }
+
+        // Bot AI - Hard (sangat cerdas)
+        function botHard(botId, botHand) {
+            // Analisis mendalam dan strategi jangka panjang
+            const highCards = botHand.filter(c => rankValues[c.rank] >= 8); // J, Q, K, A, 2
+            const lowCards = botHand.filter(c => rankValues[c.rank] <= 3); // 3, 4, 5
+            
+            // Cek four of a kind - prioritaskan untuk menang langsung
+            if (canPlayFourOfAKind(botId)) {
+                const fourOfAKind = hasFourOfAKind(botHand);
+                const cardsToPlay = botHand.filter(card => card.rank === fourOfAKind.rank);
+                return { played: true, cards: cardsToPlay, type: 'four-of-a-kind' };
+            }
+
+            const isFirstTurn = !gameState.tableCards && gameState.consecutivePasses === 0;
+            const remainingPlayers = gameState.players.filter(p => p.status === 'playing').length;
+
+            if (!gameState.tableCards) {
+                // Giliran baru - analisis situasi mendalam
+                if (isFirstTurn && gameState.firstRound) {
+                    // ATURAN BARU: Wajib mengeluarkan kartu dengan prioritas tertinggi
+                    const suitPriority = ['♣', '♠', '♦', '♥'];
+                    let requiredCard = null;
+                    
+                    for (let suit of suitPriority) {
+                        requiredCard = botHand.find(card => card.rank === '3' && card.suit === suit);
+                        if (requiredCard) break;
+                    }
+                    if (!requiredCard) {
+                        for (let suit of suitPriority) {
+                            requiredCard = botHand.find(card => card.rank === '4' && card.suit === suit);
+                            if (requiredCard) break;
+                        }
+                    }
+                    
+                    if (requiredCard) {
+                        // Strategi: gunakan kartu required dalam kombinasi yang optimal
+                        const straights = findValidStraights(botHand);
+                        const straightWithRequired = straights.find(straight => 
+                            straight.some(card => card.rank === requiredCard.rank && card.suit === requiredCard.suit) &&
+                            straight.length >= 4
+                        );
+                        if (straightWithRequired) {
+                            return { played: true, cards: straightWithRequired, type: 'straight' };
+                        }
+                        
+                        const triples = findValidTriples(botHand);
+                        const tripleWithRequired = triples.find(triple => 
+                            triple.some(card => card.rank === requiredCard.rank && card.suit === requiredCard.suit)
+                        );
+                        if (tripleWithRequired) {
+                            return { played: true, cards: tripleWithRequired, type: 'triple' };
+                        }
+                        
+                        return { played: true, cards: [requiredCard], type: 'single' };
+                    }
+                }
+
+                // Analisis komposisi kartu
+                if (highCards.length > 6 && botHand.length > 8) {
+                    // Punya banyak kartu tinggi, main yang rendah dulu
+                    const lowStraights = findValidStraights(botHand).filter(s => rankValues[s[0].rank] <= 5);
+                    if (lowStraights.length > 0) {
+                        return { played: true, cards: lowStraights[0], type: 'straight' };
+                    }
+                    
+                    const lowTriples = findValidTriples(botHand).filter(t => rankValues[t[0].rank] <= 5);
+                    if (lowTriples.length > 0) {
+                        return { played: true, cards: lowTriples[0], type: 'triple' };
+                    }
+                }
+
+                // Prioritaskan menghabiskan kartu dengan kombinasi optimal
+                const straights = findValidStraights(botHand);
+                if (straights.length > 0) {
+                    const bestStraight = straights.reduce((best, current) => 
+                        current.length > best.length ? current : best
+                    );
+                    if (bestStraight.length >= 4) {
+                        return { played: true, cards: bestStraight, type: 'straight' };
+                    }
+                }
+
+                const triples = findValidTriples(botHand);
+                if (triples.length > 0) {
+                    return { played: true, cards: triples[0], type: 'triple' };
+                }
+
+                // Main kartu terendah yang tidak strategis
+                const nonStrategicCards = botHand.filter(c => rankValues[c.rank] <= 6);
+                if (nonStrategicCards.length > 0) {
+                    return { played: true, cards: [nonStrategicCards[0]], type: 'single' };
+                }
+                
+                return { played: true, cards: [botHand[0]], type: 'single' };
+            } else {
+                // Lawan dengan analisis counter yang optimal
+                const tableType = gameState.tableCards.type;
+                const tableCards = gameState.tableCards.cards;
+                
+                if (tableType === 'single') {
+                    const tableCard = tableCards[0];
+                    const validCards = botHand.filter(c => compareCards(c, tableCard) > 0);
+                    
+                    if (validCards.length > 0) {
+                        // Analisis: jangan buang kartu tinggi untuk mengalahkan kartu rendah
+                        if (rankValues[tableCard.rank] <= 5 && validCards.some(c => rankValues[c.rank] >= 10)) {
+                            // Simpan kartu tinggi, pass saja
+                            return { played: false };
+                        }
+                        
+                        // Pilih kartu terendah yang bisa mengalahkan
+                        const bestCard = validCards[0];
+                        return { played: true, cards: [bestCard], type: 'single' };
+                    }
+                } else if (tableType === 'triple') {
+                    const tableRank = tableCards[0].rank;
+                    const rankCounts = {};
+                    botHand.forEach(c => rankCounts[c.rank] = (rankCounts[c.rank] || 0) + 1);
+                    
+                    // Cari triple yang bisa mengalahkan, pertimbangkan nilai strategis
+                    let bestTriple = null;
+                    for (let rank in rankCounts) {
+                        if (rankCounts[rank] >= 3 && rankValues[rank] > rankValues[tableRank]) {
+                            // Prioritaskan triple dengan nilai rendah
+                            if (!bestTriple || rankValues[rank] < rankValues[bestTriple]) {
+                                bestTriple = rank;
+                            }
+                        }
+                    }
+                    if (bestTriple) {
+                        const cardsToPlay = botHand.filter(c => c.rank === bestTriple).slice(0, 3);
+                        return { played: true, cards: cardsToPlay, type: 'triple' };
+                    }
+                } else if (tableType === 'straight') {
+                    const tableStraight = tableCards;
+                    const straights = findValidStraights(botHand, tableStraight.length);
+                    const validStraight = straights.find(straight => 
+                        straight.length === tableStraight.length && 
+                        rankValues[straight[straight.length-1].rank] > rankValues[tableStraight[tableStraight.length-1].rank]
+                    );
+                    if (validStraight) {
+                        return { played: true, cards: validStraight, type: 'straight' };
+                    }
+                }
+
+                // Strategi pass jika situasi menguntungkan
+                if (gameState.consecutivePasses < remainingPlayers - 2 && botHand.length > 5) {
+                    return { played: false };
+                }
+            }
+
+            return { played: false };
+        }
+
+        // Bot turn dengan level difficulty
+        function botTurn(difficulty) {
+            if (gameState.gameOver) return;
+
+            const botId = gameState.currentTurnIndex;
+            const botHand = gameState.playerHands[botId].sort(compareCards);
+
+            let botPlay;
+            switch (difficulty) {
+                case 'easy':
+                    botPlay = botEasy(botId, botHand);
+                    break;
+                case 'medium':
+                    botPlay = botMedium(botId, botHand);
+                    break;
+                case 'hard':
+                    botPlay = botHard(botId, botHand);
+                    break;
+                default:
+                    botPlay = botEasy(botId, botHand);
+            }
+
+            if (botPlay.played) {
+                // Main kartu
+                gameState.playerHands[botId] = botHand.filter(card => !botPlay.cards.includes(card));
+                gameState.tableCards = {
+                    cards: botPlay.cards,
+                    type: botPlay.type,
+                    playedBy: botId
+                };
+                gameState.consecutivePasses = 0;
+
+                if (botPlay.type === 'four-of-a-kind') {
+                    showGameMessage(`🎊 ${gameState.players[botId].name} main FOUR OF A KIND dan MENANG! 🎊`, 'success');
+                    declareWinner(botId);
+                } else {
+                    showGameMessage(`${gameState.players[botId].name} main ${botPlay.type}: ${botPlay.cards.map(c => c.rank + c.suit).join(' ')}`, 'info');
+                }
+
+                // Update player card count
+                gameState.players[botId].cardCount = gameState.playerHands[botId].length;
+
+                // Cek jika menang
+                if (gameState.players[botId].cardCount === 0) {
+                    declareWinner(botId);
+                }
+            } else {
+                // Pass
+                gameState.consecutivePasses++;
+                showGameMessage(`${gameState.players[botId].name} lewat`, 'info');
+
+                const activePlayers = gameState.players.filter(p => p.status === 'playing').length;
+                if (gameState.consecutivePasses >= activePlayers - 1) {
+                    gameState.tableCards = null;
+                    gameState.consecutivePasses = 0;
+                    showGameMessage('Semua lewat! Meja dibersihkan.', 'warning');
+                }
+            }
+
+            if (!gameState.gameOver) {
+                nextTurn();
+            } else {
+                renderGame();
+            }
+        }
+
+        // Render ranking
+        function renderRanking() {
+            const rankingSection = document.getElementById('rankingSection');
+            const rankingList = document.getElementById('rankingList');
+            
+            if (gameState.winners.length > 0) {
+                rankingSection.style.display = 'block';
+                rankingList.innerHTML = '';
+                
+                // Urutkan pemenang berdasarkan posisi
+                const sortedWinners = [...gameState.winners]
+                    .map(id => gameState.players[id])
+                    .sort((a, b) => a.position - b.position);
+                
+                sortedWinners.forEach(player => {
+                    const rankingItem = document.createElement('div');
+                    rankingItem.className = 'ranking-item';
+                    rankingItem.innerHTML = `
+                        <span>${player.position}. ${player.name}</span>
+                        <span>${player.points} poin</span>
+                    `;
+                    rankingList.appendChild(rankingItem);
+                });
+            } else {
+                rankingSection.style.display = 'none';
+            }
+        }
+
+        // Start new round
+        window.startNewRound = function() {
+            const deck = shuffle(createDeck());
+            const cardsPerPlayer = 13;
+
+            // Reset player states but keep total points
+            gameState.playerHands = {};
+            gameState.winners = [];
+            gameState.roundNumber++;
+            gameState.firstRound = true;
+
+            // Deal new cards
+            for (let i = 0; i < gameState.players.length; i++) {
+                const hand = deck.slice(i * cardsPerPlayer, (i + 1) * cardsPerPlayer);
+                gameState.playerHands[i] = hand;
+                
+                // Reset player state
+                gameState.players[i] = {
+                    ...gameState.players[i],
+                    cardCount: 13,
+                    status: 'playing',
+                    position: null,
+                    points: 0
+                };
+            }
+
+            // Pemain pertama di ronde baru adalah juara 1 sebelumnya
+            gameState.currentTurnIndex = gameState.previousRoundWinner;
+            gameState.tableCards = null;
+            gameState.consecutivePasses = 0;
+            gameState.gameOver = false;
+
+            document.getElementById('nextRoundBtn').style.display = 'none';
+            document.getElementById('roundNumber').textContent = gameState.roundNumber;
+
+            renderGame();
+
+            if (gameState.previousRoundWinner !== 0) {
+                showGameMessage(`${gameState.players[gameState.previousRoundWinner].name} mulai pertama sebagai juara 1 ronde sebelumnya`, 'info');
+            }
+
+            if (!gameState.gameOver && gameState.players[gameState.previousRoundWinner].isBot) {
+                setTimeout(() => botTurn(gameState.botDifficulty), 1500);
+            }
+        };
+
+        // Reset game
+        window.resetGame = function() {
+            gameState = {
+                players: [],
+                currentTurnIndex: 0,
+                tableCards: null,
+                playerHands: {},
+                consecutivePasses: 0,
+                gameOver: false,
+                winners: [],
+                roundNumber: 1,
+                totalPoints: {},
+                firstRound: true,
+                botDifficulty: 'easy',
+                gameHistory: [],
+                previousRoundWinner: null
+            };
+            selectedCards = [];
+            
+            document.getElementById('instantWinMessage').innerHTML = '';
+            document.getElementById('gameMessage').innerHTML = '';
+            document.getElementById('gameScreen').style.display = 'none';
+            document.getElementById('menuScreen').style.display = 'block';
+        };
+
+        // Kembali ke multiplayer
+        window.goBackToMultiplayer = function() {
+            window.location.href = 'index.html';
+        };
+    </script>
+</body>
+</html>
