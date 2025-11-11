@@ -876,7 +876,7 @@
                 position: null,
                 points: 0
             })),
-            currentTurnIndex: 0,
+            ccurrentTurnIndex: findFirstPlayer(),
             tableCards: null,
             playerHands: {},
             consecutivePasses: 0,
@@ -996,6 +996,83 @@
     function containsThreeClubs(cards) {
         return cards.some(card => card.rank === '3' && card.suit === '♣');
     }
+function containsThreeClubs(cards) {
+    return cards.some(card => card.rank === '3' && card.suit === '♣');
+}
+
+// ========== FUNGSI BARU UNTUK ATURAN PEMAIN PERTAMA ==========
+
+// Find player with lowest 3 card, if no 3 then lowest 4, etc.
+function findFirstPlayer() {
+    const suitPriority = ['♣', '♠', '♦', '♥']; // Prioritas: kriting, sekop, wajik, love
+    
+    // Cari pemain yang punya kartu 3
+    for (let suit of suitPriority) {
+        for (let i = 0; i < gameState.players.length; i++) {
+            const hand = gameState.playerHands[i];
+            if (hand.some(card => card.rank === '3' && card.suit === suit)) {
+                return i;
+            }
+        }
+    }
+    
+    // Jika tidak ada yang punya 3, cari yang punya 4
+    for (let suit of suitPriority) {
+        for (let i = 0; i < gameState.players.length; i++) {
+            const hand = gameState.playerHands[i];
+            if (hand.some(card => card.rank === '4' && card.suit === suit)) {
+                return i;
+            }
+        }
+    }
+    
+    // Jika tidak ada yang punya 4, cari yang punya 5, dst...
+    for (let rank of ['5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A', '2']) {
+        for (let suit of suitPriority) {
+            for (let i = 0; i < gameState.players.length; i++) {
+                const hand = gameState.playerHands[i];
+                if (hand.some(card => card.rank === rank && card.suit === suit)) {
+                    return i;
+                }
+            }
+        }
+    }
+    
+    // Fallback: mulai dari pemain 0
+    return 0;
+}
+
+// Update fungsi containsThreeClubs untuk aturan baru
+function containsRequiredFirstCard(cards) {
+    const suitPriority = ['♣', '♠', '♦', '♥'];
+    
+    // Cari kartu 3 dengan prioritas suit
+    for (let suit of suitPriority) {
+        if (cards.some(card => card.rank === '3' && card.suit === suit)) {
+            return true;
+        }
+    }
+    
+    // Jika tidak ada 3, cari 4 dengan prioritas suit
+    for (let suit of suitPriority) {
+        if (cards.some(card => card.rank === '4' && card.suit === suit)) {
+            return true;
+        }
+    }
+    
+    // Jika tidak ada 4, cari 5, dst...
+    for (let rank of ['5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A', '2']) {
+        for (let suit of suitPriority) {
+            if (cards.some(card => card.rank === rank && card.suit === suit)) {
+                return true;
+            }
+        }
+    }
+    
+    return false;
+}
+
+// ========== AKHIR FUNGSI BARU ==========
 
     function canPlayFourOfAKind(playerIndex) {
         const hand = gameState.playerHands[playerIndex];
@@ -1023,11 +1100,12 @@
             return { valid: true, type: 'four-of-a-kind' };
         }
 
-        if (isFirstTurn && gameState.firstRound) {
-            if (!containsThreeClubs(cards)) {
-                return { valid: false, error: 'Ronde pertama! Kombinasi pertama harus mengandung 3♣' };
-            }
-        }
+ // Ronde pertama - wajib mengandung kartu dengan prioritas tertinggi
+if (isFirstTurn && gameState.firstRound) {
+    if (!containsRequiredFirstCard(cards)) {
+        return { valid: false, error: 'Ronde pertama! Kombinasi pertama harus mengandung kartu dengan prioritas tertinggi (3♣, 3♠, 3♦, 3♥, 4♣, dst)' };
+    }
+}
 
         const sortedCards = [...cards].sort(compareCards);
 
@@ -1290,8 +1368,9 @@
             info.textContent = `${gameState.tableCards.type.toUpperCase()} oleh ${playerName}`;
         } else {
             container.innerHTML = '';
-            if (gameState.firstRound && gameState.currentTurnIndex === 0) {
-                info.textContent = 'Ronde pertama! Wajib mengeluarkan kombinasi yang mengandung 3♣';
+           if (gameState.firstRound && gameState.currentTurnIndex === findFirstPlayer()) {
+    info.textContent = 'Ronde pertama! Wajib mengeluarkan kombinasi yang mengandung kartu dengan prioritas tertinggi';
+}
             } else {
                 info.textContent = 'Belum ada kartu - Pemain pertama bebas main kombinasi apapun';
             }
