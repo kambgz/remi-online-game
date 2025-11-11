@@ -1,0 +1,1460 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Remi 13 Kartu - Online Multiplayer</title>
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <style>
+        /* CSS styles remain the same as previous implementation */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a472a 0%, #2a5298 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        .menu-screen, .game-screen, .lobby-screen {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .game-screen, .lobby-screen {
+            display: none;
+        }
+
+        h1 {
+            color: #1a472a;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        .menu-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: #1a472a;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #2a5298;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(42, 82, 152, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #5a6268;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .btn-warning:hover {
+            background: #e0a800;
+        }
+
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .btn-info:hover {
+            background: #138496;
+        }
+
+        .demo-badge {
+            background: #ffd700;
+            color: #1a472a;
+            padding: 10px 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+            font-weight: bold;
+            border: 2px solid #ff8c00;
+        }
+
+        .game-area {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .players-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .player-info {
+            text-align: center;
+            padding: 15px;
+            border-radius: 8px;
+            background: white;
+            border: 2px solid #ddd;
+            position: relative;
+        }
+
+        .player-info.active {
+            background: #1a472a;
+            color: white;
+            border-color: #2a5298;
+        }
+
+        .player-info.winner {
+            background: #28a745;
+            color: white;
+            border-color: #1e7e34;
+        }
+
+        .player-info.you {
+            border-color: #ffd700;
+            border-width: 3px;
+        }
+
+        .player-position {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: gold;
+            color: #1a472a;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.8em;
+        }
+
+        .table-area {
+            min-height: 200px;
+            background: #1a472a;
+            border-radius: 15px;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .table-cards {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .card {
+            width: 70px;
+            height: 100px;
+            background: white;
+            border: 2px solid #333;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            user-select: none;
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+        }
+
+        .card.selected {
+            transform: translateY(-20px);
+            box-shadow: 0 5px 15px rgba(26, 71, 42, 0.5);
+            border-color: #1a472a;
+            border-width: 3px;
+        }
+
+        .card.red {
+            color: #dc3545;
+        }
+
+        .card.black {
+            color: #000;
+        }
+
+        .card-suit {
+            font-size: 1.2em;
+        }
+
+        .player-hand {
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+        }
+
+        .hand-cards {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 15px;
+        }
+
+        .game-controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            padding: 20px;
+            flex-wrap: wrap;
+        }
+
+        .message {
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-weight: 600;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .message.warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .instant-win {
+            background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            margin: 20px 0;
+            border: 3px solid #ff8c00;
+            animation: pulse 1s ease infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        .instant-win h2 {
+            color: #dc3545;
+            font-size: 2em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .rules-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-size: 0.9em;
+        }
+
+        .rules-section h3 {
+            color: #1a472a;
+            margin-bottom: 10px;
+        }
+
+        .rules-section ul {
+            margin-left: 20px;
+        }
+
+        .rules-section li {
+            margin: 5px 0;
+        }
+
+        .ranking-section {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .ranking-section h3 {
+            color: #1a472a;
+            margin-bottom: 10px;
+        }
+
+        .ranking-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .scoreboard {
+            background: #1a472a;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .scoreboard h3 {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .score-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+        }
+
+        .input-group {
+            margin: 15px 0;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #1a472a;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+        }
+
+        .input-group input:focus {
+            border-color: #1a472a;
+            outline: none;
+        }
+
+        .lobby-players {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .player-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .player-item {
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            text-align: center;
+            border: 2px solid #ddd;
+        }
+
+        .player-item.host {
+            border-color: #ffd700;
+            background: #fff9e6;
+        }
+
+        .room-info {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            text-align: center;
+        }
+
+        .copy-btn {
+            background: #17a2b8;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .menu-screen, .game-screen, .lobby-screen {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .card {
+                width: 60px;
+                height: 85px;
+                font-size: 1.2em;
+            }
+
+            .game-controls {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Menu Screen -->
+        <div class="menu-screen" id="menuScreen">
+            <div class="demo-badge">
+                🎮 REMI 13 KARTU - Online Multiplayer
+            </div>
+            <h1>🃏 Remi 13 Kartu</h1>
+
+            <div class="input-group">
+                <label for="playerName">Nama Pemain:</label>
+                <input type="text" id="playerName" placeholder="Masukkan nama Anda" maxlength="20">
+            </div>
+
+            <div class="menu-buttons">
+                <button class="btn-success" onclick="createRoom()">Buat Room Baru</button>
+                <button class="btn-primary" onclick="showJoinRoom()">Gabung Room</button>
+                <button class="btn-warning" onclick="startSinglePlayer()">Main Sendiri (Single Player)</button>
+            </div>
+
+            <div class="rules-section">
+                <h3>📋 Aturan Permainan:</h3>
+                <ul>
+                    <li><strong>Urutan Kartu:</strong> 3 < 4 < 5 < 6 < 7 < 8 < 9 < 10 < J < Q < K < A < 2</li>
+                    <li><strong>Kombinasi:</strong> Single, Straight (min 3 kartu), Triple, Four of a Kind</li>
+                    <li><strong>Straight:</strong> 2 hanya boleh di awal (2-3-4), maksimal sampai A</li>
+                    <li><strong>Four of a Kind:</strong> Hanya di giliran baru atau lawan kartu 2</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Join Room Screen -->
+        <div class="menu-screen" id="joinRoomScreen" style="display: none;">
+            <div class="demo-badge">
+                🎮 Gabung Room
+            </div>
+            <h1>🃏 Gabung Room</h1>
+
+            <div class="input-group">
+                <label for="roomCode">Kode Room:</label>
+                <input type="text" id="roomCode" placeholder="Masukkan kode room" maxlength="6" style="text-transform: uppercase;">
+            </div>
+
+            <div class="menu-buttons">
+                <button class="btn-success" onclick="joinRoom()">Gabung Room</button>
+                <button class="btn-secondary" onclick="showMainMenu()">Kembali</button>
+            </div>
+        </div>
+
+        <!-- Lobby Screen -->
+        <div class="lobby-screen" id="lobbyScreen">
+            <div class="demo-badge">
+                🎮 Lobby Room
+            </div>
+            <h1>🃏 Lobby Permainan</h1>
+
+            <div class="room-info">
+                <h3>Kode Room: <span id="roomCodeDisplay">-</span></h3>
+                <button class="copy-btn" onclick="copyRoomCode()">📋 Copy Kode</button>
+            </div>
+
+            <div class="lobby-players">
+                <h3>Pemain di Room:</h3>
+                <div class="player-list" id="playerList">
+                    <!-- Player list will be populated here -->
+                </div>
+            </div>
+
+            <div class="menu-buttons">
+                <button class="btn-success" id="startGameBtn" onclick="startOnlineGame()" disabled>Mulai Game</button>
+                <button class="btn-danger" onclick="leaveRoom()">Keluar Room</button>
+            </div>
+        </div>
+
+        <!-- Game Screen -->
+        <div class="game-screen" id="gameScreen">
+            <div class="demo-badge">
+                🎮 Room: <span id="currentRoomCode">-</span> - Ronde <span id="roundNumber">1</span>
+            </div>
+            <h1>🃏 Remi 13 Kartu</h1>
+
+            <div id="instantWinMessage"></div>
+            <div id="gameMessage"></div>
+
+            <div class="game-area">
+                <div class="scoreboard" id="scoreboard">
+                    <h3>🏆 Scoreboard</h3>
+                    <div id="scoreList"></div>
+                </div>
+
+                <div class="players-info" id="playersInfo"></div>
+
+                <div class="table-area">
+                    <h3 style="color: white;">Kartu di Meja</h3>
+                    <div class="table-cards" id="tableCards"></div>
+                    <p style="color: white;" id="tableInfo">Belum ada kartu</p>
+                </div>
+
+                <div class="player-hand">
+                    <h3>Kartu Anda (<span id="cardCount">13</span> kartu tersisa)</h3>
+                    <div class="hand-cards" id="playerCards"></div>
+                </div>
+
+                <div class="game-controls">
+                    <button class="btn-primary" id="playBtn" onclick="playCards()">Mainkan Kartu</button>
+                    <button class="btn-secondary" id="passBtn" onclick="pass()">Lewat</button>
+                    <button class="btn-danger" onclick="leaveGame()">Keluar Game</button>
+                    <button class="btn-success" id="nextRoundBtn" onclick="startNewRound()" style="display: none;">Ronde Baru</button>
+                </div>
+
+                <div class="ranking-section" id="rankingSection" style="display: none;">
+                    <h3>🏆 Ranking Ronde Ini</h3>
+                    <div id="rankingList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase Configuration - GANTI DENGAN KONFIGURASI FIREBASE ANDA
+        // Firebase Configuration
+const firebaseConfig = {
+    apiKey: "AIzaSyAbePD0UghpE9o453vMXM-8CL2BqsxNUrc",
+    authDomain: "remi-online-game.firebaseapp.com",
+    databaseURL: "https://remi-online-game-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "remi-online-game",
+    storageBucket: "remi-online-game.firebasestorage.app",
+    messagingSenderId: "718924386123",
+    appId: "1:718924386123:web:f4b9fb31b0631d115962ce",
+    measurementId: "G-ZQ90FL355S"
+};
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // Game State
+        let gameState = {
+            players: [],
+            currentTurnIndex: 0,
+            tableCards: null,
+            playerHands: {},
+            consecutivePasses: 0,
+            gameOver: false,
+            winners: [],
+            roundNumber: 1,
+            totalPoints: {},
+            firstRound: true,
+            gameHistory: [],
+            previousRoundWinner: null,
+            roomId: null,
+            playerId: null,
+            isHost: false,
+            playerName: '',
+            onlineMode: false,
+            myPlayerIndex: -1
+        };
+
+        let selectedCards = [];
+
+        // Card definitions
+        const suits = ['♠', '♣', '♦', '♥'];
+        const ranks = ['3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A', '2'];
+        const rankValues = { '3': 0, '4': 1, '5': 2, '6': 3, '7': 4, '8': 5, '9': 6, '10': 7, 'J': 8, 'Q': 9, 'K': 10, 'A': 11, '2': 12 };
+
+        // ==================== UTILITY FUNCTIONS ====================
+        function generateRoomCode() {
+            return Math.random().toString(36).substring(2, 8).toUpperCase();
+        }
+
+        function generatePlayerId() {
+            return 'player_' + Date.now() + '_' + Math.random().toString(36).substring(2);
+        }
+
+        function showMainMenu() {
+            document.getElementById('menuScreen').style.display = 'block';
+            document.getElementById('joinRoomScreen').style.display = 'none';
+            document.getElementById('lobbyScreen').style.display = 'none';
+            document.getElementById('gameScreen').style.display = 'none';
+        }
+
+        function showJoinRoom() {
+            const playerName = document.getElementById('playerName').value.trim();
+            if (!playerName) {
+                alert('Masukkan nama Anda terlebih dahulu!');
+                return;
+            }
+            gameState.playerName = playerName;
+            document.getElementById('menuScreen').style.display = 'none';
+            document.getElementById('joinRoomScreen').style.display = 'block';
+        }
+
+        function showGameScreen() {
+            document.getElementById('menuScreen').style.display = 'none';
+            document.getElementById('joinRoomScreen').style.display = 'none';
+            document.getElementById('lobbyScreen').style.display = 'none';
+            document.getElementById('gameScreen').style.display = 'block';
+        }
+
+        function copyRoomCode() {
+            const roomCode = document.getElementById('roomCodeDisplay').textContent;
+            navigator.clipboard.writeText(roomCode).then(() => {
+                alert('Kode room disalin: ' + roomCode);
+            });
+        }
+
+        // ==================== ROOM MANAGEMENT ====================
+        async function createRoom() {
+            const playerName = document.getElementById('playerName').value.trim();
+            if (!playerName) {
+                alert('Masukkan nama Anda terlebih dahulu!');
+                return;
+            }
+
+            gameState.playerName = playerName;
+            gameState.playerId = generatePlayerId();
+            gameState.roomId = generateRoomCode();
+            gameState.isHost = true;
+            gameState.onlineMode = true;
+
+            const roomData = {
+                host: gameState.playerId,
+                players: {
+                    [gameState.playerId]: {
+                        name: playerName,
+                        ready: true,
+                        isHost: true
+                    }
+                },
+                gameState: null,
+                status: 'waiting'
+            };
+
+            try {
+                await database.ref('rooms/' + gameState.roomId).set(roomData);
+                showLobby();
+                setupRoomListeners();
+            } catch (error) {
+                console.error('Error creating room:', error);
+                alert('Gagal membuat room. Coba lagi.');
+            }
+        }
+
+        async function joinRoom() {
+            const playerName = document.getElementById('playerName').value.trim();
+            const roomCode = document.getElementById('roomCode').value.trim().toUpperCase();
+
+            if (!playerName) {
+                alert('Masukkan nama Anda terlebih dahulu!');
+                return;
+            }
+
+            if (!roomCode) {
+                alert('Masukkan kode room terlebih dahulu!');
+                return;
+            }
+
+            gameState.playerName = playerName;
+            gameState.playerId = generatePlayerId();
+            gameState.roomId = roomCode;
+            gameState.isHost = false;
+            gameState.onlineMode = true;
+
+            try {
+                const roomRef = database.ref('rooms/' + roomCode);
+                const snapshot = await roomRef.once('value');
+                
+                if (!snapshot.exists()) {
+                    alert('Room tidak ditemukan!');
+                    return;
+                }
+
+                const roomData = snapshot.val();
+                if (roomData.status === 'playing') {
+                    alert('Game sudah berjalan di room ini!');
+                    return;
+                }
+
+                await roomRef.child('players/' + gameState.playerId).set({
+                    name: playerName,
+                    ready: false,
+                    isHost: false
+                });
+
+                showLobby();
+                setupRoomListeners();
+            } catch (error) {
+                console.error('Error joining room:', error);
+                alert('Gagal bergabung ke room. Coba lagi.');
+            }
+        }
+
+        function showLobby() {
+            document.getElementById('menuScreen').style.display = 'none';
+            document.getElementById('joinRoomScreen').style.display = 'none';
+            document.getElementById('lobbyScreen').style.display = 'block';
+            document.getElementById('gameScreen').style.display = 'none';
+
+            document.getElementById('roomCodeDisplay').textContent = gameState.roomId;
+            document.getElementById('currentRoomCode').textContent = gameState.roomId;
+
+            if (gameState.isHost) {
+                document.getElementById('startGameBtn').disabled = false;
+            }
+        }
+
+        function setupRoomListeners() {
+            const roomRef = database.ref('rooms/' + gameState.roomId);
+            
+            roomRef.child('players').on('value', (snapshot) => {
+                const players = snapshot.val() || {};
+                updatePlayerList(players);
+                
+                if (gameState.isHost) {
+                    const playerCount = Object.keys(players).length;
+                    document.getElementById('startGameBtn').disabled = playerCount < 2;
+                }
+            });
+
+            roomRef.child('gameState').on('value', (snapshot) => {
+                const onlineGameState = snapshot.val();
+                if (onlineGameState) {
+                    updateLocalGameState(onlineGameState);
+                }
+            });
+
+            roomRef.child('status').on('value', (snapshot) => {
+                const status = snapshot.val();
+                if (status === 'playing' && document.getElementById('gameScreen').style.display !== 'block') {
+                    showGameScreen();
+                }
+            });
+        }
+
+        function updatePlayerList(players) {
+            const playerList = document.getElementById('playerList');
+            playerList.innerHTML = '';
+
+            Object.entries(players).forEach(([id, player]) => {
+                const playerItem = document.createElement('div');
+                playerItem.className = `player-item ${player.isHost ? 'host' : ''}`;
+                playerItem.innerHTML = `
+                    <strong>${player.name}</strong>
+                    ${player.isHost ? '<br><small>👑 Host</small>' : ''}
+                    ${player.ready ? '<br><small>✅ Ready</small>' : '<br><small>❌ Not Ready</small>'}
+                `;
+                playerList.appendChild(playerItem);
+            });
+        }
+
+        async function startOnlineGame() {
+            if (!gameState.isHost) return;
+
+            const roomRef = database.ref('rooms/' + gameState.roomId);
+            const playersSnapshot = await roomRef.child('players').once('value');
+            const players = playersSnapshot.val();
+
+            const updates = {};
+            Object.keys(players).forEach(playerId => {
+                updates[`players/${playerId}/ready`] = true;
+            });
+            updates['status'] = 'playing';
+
+            await roomRef.update(updates);
+
+            const newGameState = initializeOnlineGameState(players);
+            await roomRef.child('gameState').set(newGameState);
+        }
+
+        function initializeOnlineGameState(players) {
+            const deck = shuffle(createDeck());
+            const playerIds = Object.keys(players);
+            const cardsPerPlayer = 13;
+
+            const onlineGameState = {
+                players: playerIds.map((playerId, index) => ({
+                    id: index,
+                    playerId: playerId,
+                    name: players[playerId].name,
+                    cardCount: 13,
+                    status: 'playing',
+                    isBot: false,
+                    position: null,
+                    points: 0
+                })),
+                currentTurnIndex: 0,
+                tableCards: null,
+                playerHands: {},
+                consecutivePasses: 0,
+                gameOver: false,
+                winners: [],
+                roundNumber: 1,
+                totalPoints: {},
+                firstRound: true,
+                previousRoundWinner: null
+            };
+
+            playerIds.forEach((playerId, index) => {
+                const hand = deck.slice(index * cardsPerPlayer, (index + 1) * cardsPerPlayer);
+                onlineGameState.playerHands[index] = hand;
+                onlineGameState.totalPoints[index] = 0;
+            });
+
+            return onlineGameState;
+        }
+
+        function updateLocalGameState(onlineGameState) {
+            const ourPlayerIndex = onlineGameState.players.findIndex(p => p.playerId === gameState.playerId);
+            
+            if (ourPlayerIndex === -1) return;
+
+            gameState.myPlayerIndex = ourPlayerIndex;
+            gameState.players = onlineGameState.players;
+            gameState.currentTurnIndex = onlineGameState.currentTurnIndex;
+            gameState.tableCards = onlineGameState.tableCards;
+            gameState.consecutivePasses = onlineGameState.consecutivePasses;
+            gameState.gameOver = onlineGameState.gameOver;
+            gameState.winners = onlineGameState.winners;
+            gameState.roundNumber = onlineGameState.roundNumber;
+            gameState.totalPoints = onlineGameState.totalPoints;
+            gameState.firstRound = onlineGameState.firstRound;
+            gameState.previousRoundWinner = onlineGameState.previousRoundWinner;
+
+            gameState.playerHands[ourPlayerIndex] = onlineGameState.playerHands[ourPlayerIndex];
+
+            renderGame();
+        }
+
+        // ==================== GAME LOGIC FUNCTIONS ====================
+        function createDeck() {
+            const deck = [];
+            for (let suit of suits) {
+                for (let rank of ranks) {
+                    deck.push({ rank, suit });
+                }
+            }
+            return deck;
+        }
+
+        function shuffle(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        function compareCards(card1, card2) {
+            return rankValues[card1.rank] - rankValues[card2.rank];
+        }
+
+        function hasFourOfAKind(cards) {
+            const rankCounts = {};
+            cards.forEach(c => {
+                rankCounts[c.rank] = (rankCounts[c.rank] || 0) + 1;
+            });
+            
+            for (let rank in rankCounts) {
+                if (rankCounts[rank] === 4) {
+                    return { has: true, rank: rank };
+                }
+            }
+            return { has: false };
+        }
+
+        function isValidTriple(cards) {
+            if (cards.length !== 3) return false;
+            return cards[0].rank === cards[1].rank && cards[1].rank === cards[2].rank;
+        }
+
+        function isValidStraight(cards) {
+            if (cards.length < 3) return false;
+            
+            const sortedCards = [...cards].sort(compareCards);
+            
+            for (let i = 1; i < sortedCards.length; i++) {
+                if (sortedCards[i].rank === '2') {
+                    return false;
+                }
+            }
+            
+            for (let i = 1; i < sortedCards.length; i++) {
+                if (rankValues[sortedCards[i].rank] !== rankValues[sortedCards[i-1].rank] + 1) {
+                    return false;
+                }
+            }
+            
+            return true;
+        }
+
+        function containsThreeClubs(cards) {
+            return cards.some(card => card.rank === '3' && card.suit === '♣');
+        }
+
+        function canPlayFourOfAKind(playerIndex) {
+            const hand = gameState.playerHands[playerIndex];
+            const fourOfAKind = hasFourOfAKind(hand);
+            
+            if (!fourOfAKind.has) return false;
+            
+            if (!gameState.tableCards) return true;
+            if (gameState.tableCards.type === 'single' && gameState.tableCards.cards[0].rank === '2') return true;
+            if (gameState.consecutivePasses >= gameState.players.filter(p => p.status === 'playing').length - 1) return true;
+            
+            return false;
+        }
+
+        function validatePlay(cards, tableCards, isFirstTurn = false) {
+            if (cards.length === 0) return { valid: false, error: 'Pilih kartu terlebih dahulu' };
+
+            const fourOfAKind = hasFourOfAKind(cards);
+            if (fourOfAKind.has) {
+                if (!canPlayFourOfAKind(gameState.myPlayerIndex)) {
+                    return { valid: false, error: 'Four of a kind hanya bisa dimainkan di giliran baru atau lawan kartu 2' };
+                }
+                return { valid: true, type: 'four-of-a-kind' };
+            }
+
+            if (isFirstTurn && gameState.firstRound) {
+                if (!containsThreeClubs(cards)) {
+                    return { valid: false, error: 'Ronde pertama! Kombinasi pertama harus mengandung 3♣' };
+                }
+            }
+
+            const sortedCards = [...cards].sort(compareCards);
+
+            if (!tableCards) {
+                if (cards.length === 1) return { valid: true, type: 'single' };
+                
+                if (isValidTriple(cards)) {
+                    return { valid: true, type: 'triple' };
+                }
+                
+                if (isValidStraight(cards)) {
+                    return { valid: true, type: 'straight' };
+                }
+                
+                return { valid: false, error: 'Kombinasi tidak valid. Hanya single, triple, atau straight yang diperbolehkan' };
+            }
+
+            const tableType = tableCards.type;
+            
+            if (tableType === 'single' && tableCards.cards[0].rank === '2' && fourOfAKind.has) {
+                return { valid: true, type: 'four-of-a-kind' };
+            }
+            
+            if (cards.length === 1 && tableType === 'single') {
+                if (compareCards(cards[0], tableCards.cards[0]) > 0) {
+                    return { valid: true, type: 'single' };
+                }
+                return { valid: false, error: 'Kartu harus lebih besar' };
+            }
+
+            if (tableType === 'triple' && cards.length === 3) {
+                if (isValidTriple(cards)) {
+                    const cardRank = cards[0].rank;
+                    const tableRank = tableCards.cards[0].rank;
+                    if (rankValues[cardRank] > rankValues[tableRank]) {
+                        return { valid: true, type: 'triple' };
+                    }
+                    return { valid: false, error: 'Triple harus lebih besar' };
+                }
+                return { valid: false, error: 'Harus triple 3 kartu' };
+            }
+
+            if (tableType === 'straight' && cards.length >= 3) {
+                if (cards.length !== tableCards.cards.length) {
+                    return { valid: false, error: 'Straight harus sama panjang' };
+                }
+                
+                if (!isValidStraight(cards)) {
+                    return { valid: false, error: 'Bukan straight yang valid' };
+                }
+                
+                if (rankValues[sortedCards[sortedCards.length-1].rank] > 
+                    rankValues[tableCards.cards[tableCards.cards.length-1].rank]) {
+                    return { valid: true, type: 'straight' };
+                }
+                return { valid: false, error: 'Straight harus lebih tinggi' };
+            }
+
+            return { valid: false, error: 'Harus mengikuti tipe kartu di meja' };
+        }
+
+        // ==================== ONLINE GAME ACTIONS ====================
+        async function playCards() {
+            if (gameState.myPlayerIndex === -1 || gameState.currentTurnIndex !== gameState.myPlayerIndex || 
+                gameState.gameOver || gameState.players[gameState.myPlayerIndex].status !== 'playing') return;
+            
+            if (selectedCards.length === 0) {
+                showGameMessage('Pilih kartu terlebih dahulu!', 'error');
+                return;
+            }
+
+            const myHand = gameState.playerHands[gameState.myPlayerIndex];
+            const cardsToPlay = selectedCards.map(i => myHand[i]);
+            
+            const isFirstTurn = !gameState.tableCards && gameState.consecutivePasses === 0;
+            const validation = validatePlay(cardsToPlay, gameState.tableCards, isFirstTurn);
+
+            if (!validation.valid) {
+                showGameMessage(validation.error, 'error');
+                return;
+            }
+
+            await makeMove(cardsToPlay, validation.type);
+        }
+
+        async function makeMove(cards, type) {
+            if (!gameState.onlineMode) return;
+
+            const roomRef = database.ref('rooms/' + gameState.roomId);
+            const ourPlayerIndex = gameState.myPlayerIndex;
+
+            gameState.playerHands[ourPlayerIndex] = gameState.playerHands[ourPlayerIndex].filter(
+                card => !cards.includes(card)
+            );
+
+            const updates = {
+                [`gameState/playerHands/${ourPlayerIndex}`]: gameState.playerHands[ourPlayerIndex],
+                [`gameState/tableCards`]: {
+                    cards: cards,
+                    type: type,
+                    playedBy: ourPlayerIndex
+                },
+                [`gameState/consecutivePasses`]: 0,
+                [`gameState/players/${ourPlayerIndex}/cardCount`]: gameState.playerHands[ourPlayerIndex].length
+            };
+
+            if (type === 'four-of-a-kind' || gameState.playerHands[ourPlayerIndex].length === 0) {
+                await declareWinnerOnline(ourPlayerIndex, roomRef);
+            } else {
+                const nextPlayerIndex = (ourPlayerIndex + 1) % gameState.players.length;
+                updates[`gameState/currentTurnIndex`] = nextPlayerIndex;
+                
+                if (gameState.firstRound) {
+                    updates[`gameState/firstRound`] = false;
+                }
+            }
+
+            await roomRef.update(updates);
+            selectedCards = [];
+        }
+
+        async function pass() {
+            if (gameState.myPlayerIndex === -1 || gameState.currentTurnIndex !== gameState.myPlayerIndex || 
+                gameState.gameOver || gameState.players[gameState.myPlayerIndex].status !== 'playing') return;
+
+            const roomRef = database.ref('rooms/' + gameState.roomId);
+            const newConsecutivePasses = gameState.consecutivePasses + 1;
+            
+            const updates = {
+                [`gameState/consecutivePasses`]: newConsecutivePasses
+            };
+
+            const activePlayers = gameState.players.filter(p => p.status === 'playing').length;
+            if (newConsecutivePasses >= activePlayers - 1 && gameState.tableCards) {
+                updates[`gameState/tableCards`] = null;
+                updates[`gameState/consecutivePasses`] = 0;
+            }
+
+            const nextPlayerIndex = (gameState.currentTurnIndex + 1) % gameState.players.length;
+            updates[`gameState/currentTurnIndex`] = nextPlayerIndex;
+
+            await roomRef.update(updates);
+        }
+
+        async function declareWinnerOnline(playerIndex, roomRef) {
+            const player = gameState.players[playerIndex];
+            const position = gameState.winners.length + 1;
+            
+            let points = 0;
+            if (position === 1) {
+                points = 3;
+                gameState.previousRoundWinner = playerIndex;
+            }
+            else if (position === 2) points = 2;
+            else if (position === 3) points = 1;
+            
+            const updates = {
+                [`gameState/players/${playerIndex}/status`]: 'winner',
+                [`gameState/players/${playerIndex}/position`]: position,
+                [`gameState/players/${playerIndex}/points`]: points,
+                [`gameState/totalPoints/${playerIndex}`]: (gameState.totalPoints[playerIndex] || 0) + points,
+                [`gameState/winners`]: [...gameState.winners, playerIndex],
+                [`gameState/tableCards`]: null,
+                [`gameState/consecutivePasses`]: 0
+            };
+
+            const remainingPlayers = gameState.players.filter(p => p.status === 'playing').length;
+            if (remainingPlayers <= 1) {
+                updates[`gameState/gameOver`] = true;
+                if (remainingPlayers === 1) {
+                    const lastPlayerIndex = gameState.players.findIndex(p => p.status === 'playing');
+                    await declareWinnerOnline(lastPlayerIndex, roomRef);
+                }
+            }
+
+            await roomRef.update(updates);
+        }
+
+        // ==================== RENDERING FUNCTIONS ====================
+        function renderGame() {
+            renderScoreboard();
+            renderPlayers();
+            renderTable();
+            renderPlayerCards();
+            updateControls();
+            renderRanking();
+        }
+
+        function renderScoreboard() {
+            const scoreList = document.getElementById('scoreList');
+            scoreList.innerHTML = '';
+            
+            gameState.players.forEach(player => {
+                const scoreItem = document.createElement('div');
+                scoreItem.className = 'score-item';
+                scoreItem.innerHTML = `
+                    <span>${player.name}</span>
+                    <span>${gameState.totalPoints[player.id] || 0} poin</span>
+                `;
+                scoreList.appendChild(scoreItem);
+            });
+            
+            const roundInfo = document.createElement('div');
+            roundInfo.className = 'score-item';
+            roundInfo.style.borderTop = '1px solid white';
+            roundInfo.style.marginTop = '5px';
+            roundInfo.style.paddingTop = '5px';
+            roundInfo.innerHTML = `<span>Ronde ${gameState.roundNumber}</span>`;
+            scoreList.appendChild(roundInfo);
+        }
+
+        function renderPlayers() {
+            const container = document.getElementById('playersInfo');
+            container.innerHTML = '';
+
+            gameState.players.forEach((player, idx) => {
+                const div = document.createElement('div');
+                div.className = 'player-info';
+                
+                if (idx === gameState.currentTurnIndex && !gameState.gameOver && player.status === 'playing') {
+                    div.classList.add('active');
+                }
+                if (player.status === 'winner') {
+                    div.classList.add('winner');
+                }
+                if (idx === gameState.myPlayerIndex) {
+                    div.classList.add('you');
+                }
+
+                let positionBadge = '';
+                if (player.position !== null) {
+                    positionBadge = `<div class="player-position">${player.position}</div>`;
+                }
+
+                div.innerHTML = `
+                    ${positionBadge}
+                    <div><strong>${player.name}</strong></div>
+                    <div>${player.cardCount} kartu</div>
+                    ${player.status === 'winner' ? `<div>🏆 Juara ${player.position}</div>` : ''}
+                    ${idx === gameState.myPlayerIndex ? '<div style="font-size: 0.8em; margin-top: 5px;">(Anda)</div>' : ''}
+                    ${canPlayFourOfAKind(idx) ? '<div style="color: #dc3545; font-size: 0.8em;">✨ 4 of a Kind!</div>' : ''}
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function renderTable() {
+            const container = document.getElementById('tableCards');
+            const info = document.getElementById('tableInfo');
+
+            if (gameState.tableCards) {
+                container.innerHTML = '';
+                gameState.tableCards.cards.forEach(card => {
+                    const cardEl = createCardElement(card, false);
+                    container.appendChild(cardEl);
+                });
+                const playerName = gameState.players[gameState.tableCards.playedBy]?.name || 'Unknown';
+                info.textContent = `${gameState.tableCards.type.toUpperCase()} oleh ${playerName}`;
+            } else {
+                container.innerHTML = '';
+                if (gameState.firstRound && gameState.currentTurnIndex === 0) {
+                    info.textContent = 'Ronde pertama! Wajib mengeluarkan kombinasi yang mengandung 3♣';
+                } else {
+                    info.textContent = 'Belum ada kartu - Pemain pertama bebas main kombinasi apapun';
+                }
+            }
+        }
+
+        function createCardElement(card, selectable) {
+            const cardEl = document.createElement('div');
+            cardEl.className = 'card ' + (['♥', '♦'].includes(card.suit) ? 'red' : 'black');
+            cardEl.innerHTML = `<div>${card.rank}</div><div class="card-suit">${card.suit}</div>`;
+            if (selectable) {
+                cardEl.style.cursor = 'pointer';
+            } else {
+                cardEl.style.cursor = 'default';
+            }
+            return cardEl;
+        }
+
+        function renderPlayerCards() {
+            const container = document.getElementById('playerCards');
+            container.innerHTML = '';
+
+            if (gameState.myPlayerIndex === -1 || !gameState.playerHands[gameState.myPlayerIndex]) return;
+
+            const myHand = gameState.playerHands[gameState.myPlayerIndex].sort(compareCards);
+            
+            myHand.forEach((card, index) => {
+                const cardEl = createCardElement(card, true);
+                cardEl.onclick = () => toggleCard(index);
+                if (selectedCards.includes(index)) {
+                    cardEl.classList.add('selected');
+                }
+                container.appendChild(cardEl);
+            });
+
+            document.getElementById('cardCount').textContent = myHand.length;
+        }
+
+        function toggleCard(index) {
+            if (gameState.gameOver || gameState.currentTurnIndex !== gameState.myPlayerIndex) return;
+
+            const idx = selectedCards.indexOf(index);
+            if (idx > -1) {
+                selectedCards.splice(idx, 1);
+            } else {
+                selectedCards.push(index);
+            }
+            renderPlayerCards();
+        }
+
+        function updateControls() {
+            const playBtn = document.getElementById('playBtn');
+            const passBtn = document.getElementById('passBtn');
+            const nextRoundBtn = document.getElementById('nextRoundBtn');
+
+            const isMyTurn = gameState.myPlayerIndex !== -1 && 
+                            gameState.currentTurnIndex === gameState.myPlayerIndex && 
+                            !gameState.gameOver && 
+                            gameState.players[gameState.myPlayerIndex].status === 'playing';
+            
+            playBtn.disabled = !isMyTurn;
+            passBtn.disabled = !isMyTurn;
+
+            if (gameState.gameOver) {
+                nextRoundBtn.style.display = 'block';
+            }
+        }
+
+        function renderRanking() {
+            const rankingSection = document.getElementById('rankingSection');
+            const rankingList = document.getElementById('rankingList');
+            
+            if (gameState.winners.length > 0) {
+                rankingSection.style.display = 'block';
+                rankingList.innerHTML = '';
+                
+                const sortedWinners = [...gameState.winners]
+                    .map(id => gameState.players[id])
+                    .sort((a, b) => a.position - b.position);
+                
+                sortedWinners.forEach(player => {
+                    const rankingItem = document.createElement('div');
+                    rankingItem.className = 'ranking-item';
+                    rankingItem.innerHTML = `
+                        <span>${player.position}. ${player.name}</span>
+                        <span>${player.points} poin</span>
+                    `;
+                    rankingList.appendChild(rankingItem);
+                });
+            } else {
+                rankingSection.style.display = 'none';
+            }
+        }
+
+        function showGameMessage(message, type) {
+            const messageEl = document.getElementById('gameMessage');
+            messageEl.innerHTML = `<div class="message ${type}">${message}</div>`;
+            setTimeout(() => {
+                messageEl.innerHTML = '';
+            }, 3000);
+        }
+
+        // ==================== SINGLE PLAYER MODE ====================
+        function startSinglePlayer() {
+            const playerName = document.getElementById('playerName').value.trim() || 'Player';
+            gameState.playerName = playerName;
+            gameState.onlineMode = false;
+            
+            // For single player, we'll use a simplified version
+            alert('Mode single player sedang dalam pengembangan. Gunakan mode multiplayer untuk sekarang.');
+            showMainMenu();
+        }
+
+        async function startNewRound() {
+            if (!gameState.isHost) return;
+
+            const roomRef = database.ref('rooms/' + gameState.roomId);
+            const newGameState = initializeOnlineGameState(gameState.players.reduce((acc, player) => {
+                acc[player.playerId] = { name: player.name, ready: true, isHost: player.id === 0 };
+                return acc;
+            }, {}));
+
+            newGameState.roundNumber = gameState.roundNumber + 1;
+            newGameState.previousRoundWinner = gameState.previousRoundWinner;
+            newGameState.totalPoints = gameState.totalPoints;
+
+            await roomRef.child('gameState').set(newGameState);
+        }
+
+        async function leaveRoom() {
+            if (gameState.roomId) {
+                const roomRef = database.ref('rooms/' + gameState.roomId);
+                if (gameState.playerId) {
+                    await roomRef.child('players/' + gameState.playerId).remove();
+                }
+                
+                if (gameState.isHost) {
+                    const snapshot = await roomRef.child('players').once('value');
+                    if (!snapshot.exists() || Object.keys(snapshot.val()).length === 0) {
+                        await roomRef.remove();
+                    }
+                }
+            }
+            
+            showMainMenu();
+            resetGameState();
+        }
+
+        async function leaveGame() {
+            await leaveRoom();
+        }
+
+        function resetGameState() {
+            gameState = {
+                players: [],
+                currentTurnIndex: 0,
+                tableCards: null,
+                playerHands: {},
+                consecutivePasses: 0,
+                gameOver: false,
+                winners: [],
+                roundNumber: 1,
+                totalPoints: {},
+                firstRound: true,
+                gameHistory: [],
+                previousRoundWinner: null,
+                roomId: null,
+                playerId: null,
+                isHost: false,
+                playerName: '',
+                onlineMode: false,
+                myPlayerIndex: -1
+            };
+            selectedCards = [];
+        }
+
+        // Initialize
+        document.getElementById('playerName').focus();
+    </script>
+</body>
+</html>
